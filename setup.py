@@ -7,7 +7,7 @@ install_reqs = parse_requirements('requirements.txt', session=False)
 reqs = [str(ir.req) for ir in install_reqs]
 
 setup(name="python-kemptech-api",
-      version="0.7.28",
+      version="0.7.33",
       packages=find_packages(),
       author="KEMP Technologies",
       author_email="smcgough@kemptechnologies.com",

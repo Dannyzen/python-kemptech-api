@@ -263,8 +263,7 @@ class VirtualService(BaseKempObject):
                 "port": self.port,
                 "prot": self.prot,
             }
-        else:
-            return {"vs": self.index}
+        return {"vs": self.index}
 
     def _subvs_to_dict(self):
         return {
@@ -307,7 +306,10 @@ class VirtualService(BaseKempObject):
 
         # Clear the persist timeout if persistence is not used
         if hasattr(self, "persist") and self.persist is None:
-            self.persisttimeout = None
+            # Setting persisttimeout=0 via the API
+            # also clears the persist field on the service
+            self.persist = ''
+            self.persisttimeout = 0
 
         if self.subvs_entries:
             self.enhancedhealthchecks = None
@@ -440,45 +442,45 @@ class VirtualService(BaseKempObject):
         real_server = build_object(RealServer, self.access_info, server)
         return real_server
 
-    def populate_default_attributes(self, service):
+    def populate_default_attributes(self, params):
         """Populate VirtualService instance with standard defaults"""
         # pylint: disable=too-many-branches,too-many-statements
         #super(VirtualService, self).populate_default_attributes(dictionary)
-        self.status = service.get('Status', None)
-        self.index = service.get('Index', None)
-        self.enable = service.get('Enable', None)
-        self.forcel7 = service.get('ForceL7', None)
-        self.vstype = service.get('VStype', None)
-        self.schedule = service.get('Schedule', None)
-        self.nickname = service.get('NickName', None)
-        self.altaddress = service.get('AltAddress', None)
-        self.transparent = service.get('Transparent', None)
-        self.useforsnat = service.get('UseforSnat', None)
-        self.persist = service.get('Persist', None)
-        self.cookie = service.get('Cookie', None)
-        self.extraports = service.get('ExtraPorts', None)
-        self.qos = service.get('QoS', None)
-        self.idletime = service.get('Idletime', None)
-        self.mastervsid = service.get('MasterVSID', None)
+        self.status = params.get('Status', None)
+        self.index = params.get('Index', None)
+        self.enable = params.get('Enable', None)
+        self.forcel7 = params.get('ForceL7', None)
+        self.vstype = params.get('VStype', None)
+        self.schedule = params.get('Schedule', None)
+        self.nickname = params.get('NickName', None)
+        self.altaddress = params.get('AltAddress', None)
+        self.transparent = params.get('Transparent', None)
+        self.useforsnat = params.get('UseforSnat', None)
+        self.persist = params.get('Persist', None)
+        self.cookie = params.get('Cookie', None)
+        self.extraports = params.get('ExtraPorts', None)
+        self.qos = params.get('QoS', None)
+        self.idletime = params.get('Idletime', None)
+        self.mastervsid = params.get('MasterVSID', None)
 
-        self.querytag = service.get('QueryTag', None)
-        self.serverinit = service.get('ServerInit', None)
-        self.addvia = service.get('AddVia', None)
-        self.subnetoriginating = service.get('SubnetOriginating', None)
-        self.localbindaddrs = service.get('LocalBindAddrs', None)
-        self.defaultgw = service.get('DefaultGW', None)
+        self.querytag = params.get('QueryTag', None)
+        self.serverinit = params.get('ServerInit', None)
+        self.addvia = params.get('AddVia', None)
+        self.subnetoriginating = params.get('SubnetOriginating', None)
+        self.localbindaddrs = params.get('LocalBindAddrs', None)
+        self.defaultgw = params.get('DefaultGW', None)
         #self.followvsid = falsey_to_none(int(service.get('FollowVSID', 0)))
-        self.standbyaddr = service.get('StandbyAddr', None)
-        self.standbyport = service.get('StandbyPort', None)
-        self.errorcode = service.get('ErrorCode', None)
-        self.errorurl = service.get('ErrorUrl', None)
-        self.errorpage = service.get('ErrorPage', None)
+        self.standbyaddr = params.get('StandbyAddr', None)
+        self.standbyport = params.get('StandbyPort', None)
+        self.errorcode = params.get('ErrorCode', None)
+        self.errorurl = params.get('ErrorUrl', None)
+        self.errorpage = params.get('ErrorPage', None)
 
         # WAF
-        self.alertthreshold = service.get('AlertThreshold', None)
-        self.intercept = service.get('Intercept', None)
+        self.alertthreshold = params.get('AlertThreshold', None)
+        self.intercept = params.get('Intercept', None)
         # ESP
-        self.espenabled = service.get('EspEnabled', None)
+        self.espenabled = params.get('EspEnabled', None)
 
         # Set meta values for whether WAF and ESP are enabled
         if self.alertthreshold is None or int(self.alertthreshold) == 0:
@@ -491,24 +493,24 @@ class VirtualService(BaseKempObject):
         else:
             self._esp = True
 
-        self.multiconnect = service.get('MultiConnect', None)
-        self.verify = service.get('Verify', None)
-        self.compress = service.get('Compress', None)
-        self.cache = service.get('Cache', None)
-        self.cachepercent = service.get('CachePercent', None)
+        self.multiconnect = params.get('MultiConnect', None)
+        self.verify = params.get('Verify', None)
+        self.compress = params.get('Compress', None)
+        self.cache = params.get('Cache', None)
+        self.cachepercent = params.get('CachePercent', None)
 
-        self.sslacceleration = service.get('SSLAcceleration', None)
-        self.sslrewrite = service.get('SSLRewrite', None)
-        self.sslreverse = service.get('SSLReverse', None)
-        self.sslreencrypt = service.get('SSLReencrypt', None)
-        self.starttlsmode = service.get('StartTLSMode', None)
-        self.tlstype = service.get('TlsType', None)
-        self.cipherset = service.get('CipherSet', None)
-        self.certfile = service.get('CertFile', None)
-        self.clientcert = service.get('ClientCert', None)
-        self.ocspverify = service.get('OCSPVerify', None)
-        self.reversesnihostname = service.get('ReverseSNIHostname', None)
-        self.needhostname = service.get('NeedHostName', None)
+        self.sslacceleration = params.get('SSLAcceleration', None)
+        self.sslrewrite = params.get('SSLRewrite', None)
+        self.sslreverse = params.get('SSLReverse', None)
+        self.sslreencrypt = params.get('SSLReencrypt', None)
+        self.starttlsmode = params.get('StartTLSMode', None)
+        self.tlstype = params.get('TlsType', None)
+        self.cipherset = params.get('CipherSet', None)
+        self.certfile = params.get('CertFile', None)
+        self.clientcert = params.get('ClientCert', None)
+        self.ocspverify = params.get('OCSPVerify', None)
+        self.reversesnihostname = params.get('ReverseSNIHostname', None)
+        self.needhostname = params.get('NeedHostName', None)
 
         if self.sslacceleration is None or self.sslacceleration == 'N':
             self._ssl = False
@@ -555,25 +557,25 @@ class VirtualService(BaseKempObject):
                     self.certfile = []
 
         # Real servers section
-        self.checktype = service.get('CheckType', None)
-        self.checkhost = service.get('CheckHost', None)
-        self.checkpattern = service.get('CheckPattern', None)
-        self.checkurl = service.get('CheckUrl', None)
-        self.checkcodes = service.get('CheckCodes', None)
-        self.checkheaders = service.get('CheckHeaders', None)
-        self.matchlen = service.get('MatchLen', None)
-        self.checkuse1_1 = service.get('CheckUse1.1', None)
-        self.checkport = falsey_to_none(int(service.get('CheckPort', 0)))
-        self.checkuseget = service.get('CheckUseGet', None)
-        self.extrahdrkey = service.get('ExtraHdrKey', None)
-        self.extrahdrvalue = service.get('ExtraHdrValue', None)
-        self.checkpostdata = service.get('CheckPostData', None)
-        self.rsruleprecedence = service.get('RSRulePrecedence', None)
-        self.rsruleprecedencepos = service.get('RSRulePrecedencePos', None)
-        self.enhancedhealthchecks = service.get('EnhancedHealthChecks', None)
+        self.checktype = params.get('CheckType', None)
+        self.checkhost = params.get('CheckHost', None)
+        self.checkpattern = params.get('CheckPattern', None)
+        self.checkurl = params.get('CheckUrl', None)
+        self.checkcodes = params.get('CheckCodes', None)
+        self.checkheaders = params.get('CheckHeaders', None)
+        self.matchlen = params.get('MatchLen', None)
+        self.checkuse1_1 = params.get('CheckUse1.1', None)
+        self.checkport = falsey_to_none(int(params.get('CheckPort', 0)))
+        self.checkuseget = params.get('CheckUseGet', None)
+        self.extrahdrkey = params.get('ExtraHdrKey', None)
+        self.extrahdrvalue = params.get('ExtraHdrValue', None)
+        self.checkpostdata = params.get('CheckPostData', None)
+        self.rsruleprecedence = params.get('RSRulePrecedence', None)
+        self.rsruleprecedencepos = params.get('RSRulePrecedencePos', None)
+        self.enhancedhealthchecks = params.get('EnhancedHealthChecks', None)
 
         # Handle non-standard behavior of Adaptive and Schedule parameters
-        self.adaptive = service.get('Adaptive', None)
+        self.adaptive = params.get('Adaptive', None)
         if self.adaptive == 'http_rs':
             self.adaptive = None
             self.schedule = 'adaptive'
@@ -585,10 +587,10 @@ class VirtualService(BaseKempObject):
         if self.vs is None:
             self.enable = None
 
-        self.persisttimeout = falsey_to_none(int(service.get(
+        self.persisttimeout = falsey_to_none(int(params.get(
             'PersistTimeout', 0)))
 
-        self.rsminimum = falsey_to_none(int(service.get('RsMinimum', 0)))
+        self.rsminimum = falsey_to_none(int(params.get('RsMinimum', 0)))
 
 
 class RealServer(BaseKempObject):
@@ -627,8 +629,7 @@ class RealServer(BaseKempObject):
     def rs(self):
         if hasattr(self, "dnsname") and self.dnsname is not None:
             return self.dnsname
-        else:
-            return self.addr
+        return self.addr
 
     @rs.setter
     def rs(self, value):
@@ -962,8 +963,7 @@ class Rule(BaseKempObject):
 
         if self.type is None:
             return None
-        else:
-            return types[str(self.type)]
+        return types[str(self.type)]
 
     @type_string.setter
     def type_string(self, value):
@@ -1007,16 +1007,16 @@ class Rule(BaseKempObject):
 
         return base_parameters
 
-    def populate_default_attributes(self, parameters):
+    def populate_default_attributes(self, params):
         """Populate object instance with standard defaults"""
         # Get data from inside tag
         # Tag is unknown since different rule types have
         # different tag names. The generic code using API_TAG
         # isn't usable in this case.
-        #parameters = parameters.popitem()[1]
+        #params = params.popitem()[1]
 
         for attribute, tag in self._API_DEFAULT_ATTRIBUTES.items():
-            setattr(self, attribute, parameters.get(tag, None))
+            setattr(self, attribute, params.get(tag, None))
 
         self.type_string = self.type
 
@@ -1060,30 +1060,30 @@ class Sso(BaseKempObject):
         response = self._get("/deldomain", self._get_base_parameters())
         return send_response(response)
 
-    def populate_default_attributes(self, sso):
+    def populate_default_attributes(self, params):
         """Populate SSO instance with standard defaults"""
-        self.id = sso.get('Id', None)
-        self.name = sso.get('Name', None)
-        self.testuser = sso.get('testuser', None)
-        self.ldap_version = sso.get('ldap_version', None)
-        self.server_side = sso.get('server_side', None)
-        self.auth_type = sso.get('auth_type', None)
-        self.logon_fmt = sso.get('logon_fmt', None)
-        self.logon_fmt2 = sso.get('logon_fmt2', None)
-        self.logon_transcode = sso.get('logon_transcode', None)
-        self.logon_domain = sso.get('logon_domain', None)
-        self.kerberos_domain = sso.get('kerberos_domain', None)
-        self.kerberos_kdc = sso.get('kerberos_kdc', None)
-        self.kcd_username = sso.get('kcd_username', None)
-        self.max_failed_auths = sso.get('max_failed_auths', None)
-        self.reset_fail_tout = sso.get('reset_fail_tout', None)
-        self.unblock_tout = sso.get('unblock_tout', None)
-        self.sess_tout_type = sso.get('sess_tout_type', None)
-        self.sess_tout_idle_pub = sso.get('sess_tout_idle_pub', None)
-        self.sess_tout_duration_pub = sso.get('sess_tout_duration_pub', None)
-        self.sess_tout_idle_priv = sso.get('sess_tout_idle_priv', None)
-        self.sess_tout_duration_priv = sso.get('sess_tout_duration_priv', None)
-        self.cert_check_asi = sso.get('cert_check_asi', None)
+        self.id = params.get('Id', None)
+        self.name = params.get('Name', None)
+        self.testuser = params.get('testuser', None)
+        self.ldap_version = params.get('ldap_version', None)
+        self.server_side = params.get('server_side', None)
+        self.auth_type = params.get('auth_type', None)
+        self.logon_fmt = params.get('logon_fmt', None)
+        self.logon_fmt2 = params.get('logon_fmt2', None)
+        self.logon_transcode = params.get('logon_transcode', None)
+        self.logon_domain = params.get('logon_domain', None)
+        self.kerberos_domain = params.get('kerberos_domain', None)
+        self.kerberos_kdc = params.get('kerberos_kdc', None)
+        self.kcd_username = params.get('kcd_username', None)
+        self.max_failed_auths = params.get('max_failed_auths', None)
+        self.reset_fail_tout = params.get('reset_fail_tout', None)
+        self.unblock_tout = params.get('unblock_tout', None)
+        self.sess_tout_type = params.get('sess_tout_type', None)
+        self.sess_tout_idle_pub = params.get('sess_tout_idle_pub', None)
+        self.sess_tout_duration_pub = params.get('sess_tout_duration_pub', None)
+        self.sess_tout_idle_priv = params.get('sess_tout_idle_priv', None)
+        self.sess_tout_duration_priv = params.get('sess_tout_duration_priv', None)
+        self.cert_check_asi = params.get('cert_check_asi', None)
 
 
 class Fqdn(BaseKempObject):
@@ -1134,8 +1134,8 @@ class Fqdn(BaseKempObject):
         super(Fqdn, self).save(update)
         self.refresh()
 
-    def populate_default_attributes(self, dictionary):
-        super(Fqdn, self).populate_default_attributes(dictionary)
+    def populate_default_attributes(self, params):
+        super(Fqdn, self).populate_default_attributes(params)
 
         # Failtime is set by minute, but recorded by second
         try:
@@ -1312,8 +1312,8 @@ class Site(BaseKempObject):
             "ip": self.ip
         }
 
-    def populate_default_attributes(self, dictionary):
-        super(Site, self).populate_default_attributes(dictionary)
+    def populate_default_attributes(self, params):
+        super(Site, self).populate_default_attributes(params)
 
         # Fix annoying API inconsistencies
 
@@ -1560,16 +1560,15 @@ class Cluster(BaseKempObject):
         if self.id is None:
             return 'Cluster {} at {} on LoadMaster {}'.format(
                 self.name, self.ip, self.ip_address)
-        else:
-            return 'Cluster #{} {} at {} on LoadMaster {}'.format(
-                self.id, self.name, self.ip, self.ip_address)
+        return 'Cluster #{} {} at {} on LoadMaster {}'.format(
+            self.id, self.name, self.ip, self.ip_address)
 
     def save(self, update=False):
         super(Cluster, self).save(update)
         self.refresh()
 
-    def populate_default_attributes(self, dictionary):
-        super(Cluster, self).populate_default_attributes(dictionary)
+    def populate_default_attributes(self, params):
+        super(Cluster, self).populate_default_attributes(params)
 
         # Clear checkerport if it's not in use
         if hasattr(self, "checkerport") and self.checkerport == "0":
@@ -1642,8 +1641,7 @@ class Range(BaseKempObject):
     def latitude(self):
         if self.lat is not None:
             return self.lat / 3600
-        else:
-            return None
+        return None
 
     @latitude.setter
     def latitude(self, value):
@@ -1653,8 +1651,7 @@ class Range(BaseKempObject):
     def longitude(self):
         if self.lat is not None:
             return self.long / 3600
-        else:
-            return None
+        return None
 
     @longitude.setter
     def longitude(self, value):
@@ -1715,8 +1712,8 @@ class Range(BaseKempObject):
         else:
             raise KempTechApiException(get_error_msg(response))
 
-    def populate_default_attributes(self, dictionary):
-        super(Range, self).populate_default_attributes(dictionary)
+    def populate_default_attributes(self, params):
+        super(Range, self).populate_default_attributes(params)
 
         if self.country == "-1":
             self.country = None
@@ -1869,12 +1866,11 @@ class Certificate(BaseKempObject):
                 "cert": self.certname,
                 "replace": "0"
             }
-        else:
-            return {
-                "cert": self.certname,
-                "replace": "0",
-                "password": self.certpass
-            }
+        return {
+            "cert": self.certname,
+            "replace": "0",
+            "password": self.certpass
+        }
 
     def save(self, update=False):
         response = self._post("/addcert", file=self.certfile,
@@ -1891,8 +1887,8 @@ class Certificate(BaseKempObject):
 
         return send_response(response)
 
-    def populate_default_attributes(self, dictionary):
-        super(Certificate, self).populate_default_attributes(dictionary)
+    def populate_default_attributes(self, params):
+        super(Certificate, self).populate_default_attributes(params)
 
         # If certname is a structure, pull out the name and set the modulus
         if isinstance(self.certname, dict):

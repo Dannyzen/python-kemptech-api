@@ -1,3 +1,12 @@
+v0.7.33, 22-06-2017
+    * LoadMaster.enable_api now supports UTF-8 credentials
+v0.7.31, 21-06-2017
+    * HttpClient now accepts an auth_handler for specifying how Basic Auth credentials should be encoded. By default, this uses requests.auth.HTTPBasicAuth for encoding.
+    * BaseKempObject and BaseKempAppliance specify HTTPBasicAuthUTF8 as the default auth_handler value.
+v0.7.30, 15-06-2017
+    * Setting VirtualService.persist to None will now reset the persistence method if the target VS is configured with a persistence method other than Source IP
+v0.7.29, 14-06-2017
+    * Setting VirtualService.persist to None clears the persist timeout, allowing persistence to be disabled.
 v0.7.28, 24-04-2017
     * Credentials are now passed through the HTTP Authorization header instead of embedded in the URL.
     * If Basic Auth credentials and a client certificate are specified, the client certificate will be used to authenticate.

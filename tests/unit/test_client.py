@@ -1,6 +1,6 @@
 import requests
 from nose.tools import (assert_equal, assert_is_instance, assert_raises,
-   assert_false, assert_in)
+   assert_false, assert_in, assert_is_none)
 
 import python_kemptech_api.generic
 import python_kemptech_api.models
@@ -122,6 +122,38 @@ class Test_HttpClient_do_request:
                 exceptions.HTTPError
         with assert_raises(client.KempTechApiException):
             self.client._do_request('GET','MyCommand')
+
+
+class Test_HttpClient_auth_handler:
+    def setup(self):
+        pass
+    
+    def teardown(self):
+        pass
+    
+    def test_get_auth_with_cert(self):
+        client = python_kemptech_api.client.HttpClient(user='test', password='test', cert='testcert')
+        actual = client._get_basic_auth()
+        assert_is_none(actual, 'Basic Auth should not be set in the presence of a certificate')
+    
+    def test_get_auth_default(self):
+        expected = ('test', 'test')
+        client = python_kemptech_api.client.HttpClient(user=expected[0], password=expected[1])
+        actual = client._get_basic_auth()
+        assert_equal(actual, expected, 'Basic Auth should default to a (username, password) tuple')
+
+    def test_get_auth_custom_handler(self):
+        username = 'test'
+        password = 'test'
+        handler = MagicMock()
+        expected = MagicMock()
+        handler.return_value = expected
+        client = python_kemptech_api.client.HttpClient(user=username, password=password, auth_handler=handler)
+        actual = client._get_basic_auth()
+        assert_equal(actual, expected, 'Basic Auth should delegate to the specified auth handler')
+        handler.assert_called_with(username, password)
+
+        
 
 
 class Test_LoadMaster:

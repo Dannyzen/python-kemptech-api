@@ -14,10 +14,13 @@ except ImportError:
     TSL_v1_2 = DEFAULT_TLS_VERSION
 
 import sys
+from base64 import b64encode
 
 from netaddr import IPAddress, AddrFormatError
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
+from requests.auth import HTTPBasicAuth
+from requests.utils import to_native_string
 
 from python_kemptech_api.exceptions import (
     KempTechApiException,
@@ -167,3 +170,39 @@ def list_object(class_to_list, access_info, data):
         obj_list.append(obj)
 
     return obj_list
+
+
+def _basic_auth_str_utf8(username, password):
+    """
+    Generates a Basic Authentication string,
+    from a username:password combination,
+    encoded as UTF-8
+    """
+    auth_str = 'Basic ' + to_native_string(
+        b64encode(('%s:%s' % (username, password)).encode('utf8')).strip()
+    )
+    return auth_str
+
+
+class HTTPBasicAuthUTF8(HTTPBasicAuth):
+    """
+    Re-implementation of requests' HTTPBasicAuth,
+    encoding the Basic Auth credentials using UTF-8
+    before they are Base64 encoded
+    """
+    def __init__(self, username, password):
+        super(HTTPBasicAuthUTF8, self).__init__(username, password)
+        self.auth_tuple = (username, password)
+
+    def __call__(self, request):
+        request.headers['Authorization'] = _basic_auth_str_utf8(
+            self.username, self.password)
+        return request
+
+    def __getitem__(self, idx):
+        """
+        Some LM objects assume the auth field
+        to be indexable as (username, password)
+        so this indexing is necessary to facilitate this assumption
+        """
+        return self.auth_tuple[idx]

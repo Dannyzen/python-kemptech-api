@@ -14,7 +14,7 @@ from .exceptions import (
     ConnectionTimeoutException,
     GenericObjectMissingLoadMasterInfo,
     UnauthorizedAccessError)
-from .utils import UseTlsAdapter, send_response
+from .utils import UseTlsAdapter, send_response, HTTPBasicAuthUTF8
 
 
 requests.packages.urllib3.disable_warnings()
@@ -29,9 +29,10 @@ class HttpClient(object):
     endpoint = None
 
     def __init__(self, tls_version=utils.DEFAULT_TLS_VERSION, cert=None,
-                 user=None, password=None):
+                 user=None, password=None, auth_handler=None):
         self.cert = cert
         self.auth = (user, password)
+        self._auth_handler = auth_handler
         self._tls_version = tls_version
         self._tls_session = Session()
         self._tls_session.mount("http://", UseTlsAdapter(self._tls_version))
@@ -48,8 +49,13 @@ class HttpClient(object):
     def _get_basic_auth(self):
         if self.cert:
             return None
-        else:
-            return self.auth
+        elif self._auth_handler:
+            # If a custom auth handler has been specified,
+            # Make use of that instead of
+            # the default (username, password) tuple
+            username, password = self.auth
+            return self._auth_handler(username, password)
+        return self.auth
 
     def _do_request(self, http_method, rest_command,
                     parameters=None, file=None, data=None,
@@ -188,7 +194,7 @@ class BaseKempObject(HttpClient, AccessInfoMixin):
         "checkuse1_1", "mastervsid", "API_INIT_PARAMS", "API_TAG", "auth"
     )
 
-    def __init__(self, loadmaster_info, **kwargs):
+    def __init__(self, loadmaster_info, auth_handler=HTTPBasicAuthUTF8, **kwargs):
         try:
             self.endpoint = loadmaster_info["endpoint"]
         except KeyError:
@@ -205,7 +211,8 @@ class BaseKempObject(HttpClient, AccessInfoMixin):
             raise GenericObjectMissingLoadMasterInfo(type(self), "auth")
         cert = loadmaster_info.get("cert")
         super(BaseKempObject, self).__init__(cert=cert,
-                                             user=self.auth[0], password=self.auth[1])
+                                             user=self.auth[0], password=self.auth[1],
+                                             auth_handler=auth_handler)
 
     def __repr__(self):
         return '{} {}'.format(
@@ -281,11 +288,12 @@ class BaseKempObject(HttpClient, AccessInfoMixin):
 
     def populate_default_attributes(self, params):
         """Populate object instance with standard defaults"""
-        if len(params) == 0:
+        param_len = len(params)
+        if param_len == 0:
             log.warning("No data was returned, leaving data intact")
             return
 
-        if len(params) == 1:
+        if param_len == 1:
             if self.API_TAG in params.keys():
                 self.populate_default_attributes(params[self.API_TAG])
                 return

@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from nose.tools import (
     assert_raises,
     assert_is_none,
@@ -23,7 +26,8 @@ from python_kemptech_api.utils import (
     validate_ip,
     validate_protocol,
     falsey_to_none,
-    list_object)
+    list_object,
+    _basic_auth_str_utf8)
 from python_kemptech_api.exceptions import (
     ValidationError
     )
@@ -74,6 +78,18 @@ class Test_validate_protocol:
     def test_invalid(self):
         with assert_raises(ValidationError):
             validate_protocol('sds')
+
+
+class Test_basic_auth_utf8:
+    def test_basic_auth_utf8_encoding(self):
+        username = 'test'
+        password = 'abcd£𝔀𒍅'
+        # username:password encoded as UTF8, followed by Base64
+        b64_credentials = 'dGVzdDphYmNkwqPwnZSA8JKNhQ=='
+        expected = 'Basic %s' % b64_credentials
+
+        actual = _basic_auth_str_utf8(username, password)
+        assert_equal(actual, expected)
 
 
 def test_falsey_to_none():

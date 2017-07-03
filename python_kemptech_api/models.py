@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import logging
 import os
 import time
@@ -50,14 +51,22 @@ from python_kemptech_api.utils import (
     get_dict_entry_as_list,
     get_sub_vs_list_from_data,
     build_object,
-    list_object
+    list_object,
+    HTTPBasicAuthUTF8
 )
 
 log = logging.getLogger(__name__)
 
 
 class BaseKempAppliance(HttpClient, AccessInfoMixin):
-    def __init__(self, ip, username=None, password=None, port=443, cert=None):
+    def __init__(
+            self,
+            ip,
+            username=None,
+            password=None,
+            port=443,
+            cert=None,
+            auth_handler=HTTPBasicAuthUTF8):
         self.ip_address = ip
         self.username = username
         self.password = password
@@ -69,7 +78,8 @@ class BaseKempAppliance(HttpClient, AccessInfoMixin):
         super(BaseKempAppliance, self).__init__(utils.DEFAULT_TLS_VERSION,
                                                 self.cert,
                                                 user=self.username,
-                                                password=self.password)
+                                                password=self.password,
+                                                auth_handler=auth_handler)
 
     def __repr__(self):
         return '{}:{}'.format(self.ip_address, self.port)
@@ -77,8 +87,7 @@ class BaseKempAppliance(HttpClient, AccessInfoMixin):
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.version == other.version
-        else:
-            return False
+        return False
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -86,37 +95,32 @@ class BaseKempAppliance(HttpClient, AccessInfoMixin):
     def __gt__(self, other):
         if isinstance(other, self.__class__):
             return self.version > other.version
-        else:
-            return False
+        return False
 
     def __lt__(self, other):
         if isinstance(other, self.__class__):
             return self.version < other.version
-        else:
-            return False
+        return False
 
     def __ge__(self, other):
         if isinstance(other, self.__class__):
             return self.version >= other.version
-        else:
-            return False
+        return False
 
     def __le__(self, other):
         if isinstance(other, self.__class__):
             return self.version <= other.version
-        else:
-            return False
+        return False
 
     def _do_request_no_api(self, cmd):
         """Perform a get in the context of enabling the API."""
         url = "https://{}:{}/{}".format(self.ip_address, self.port, cmd)
-        if self.cert:
-            resp = self._tls_session.get(url, verify=False, timeout=utils.TIMEOUT,
-                                         cert=self.cert)
-        else:
-            resp = self._tls_session.get(url, verify=False, timeout=utils.TIMEOUT,
-                                         auth=(self.username, self.password))
-            self._tls_session.close()
+        # If a cert is supplied, auth will be none
+        # otherwise, auth will be auth_handler(username, password)
+        auth = self._get_basic_auth()
+        resp = self._tls_session.get(url, verify=False, timeout=utils.TIMEOUT,
+                                     cert=self.cert, auth=auth)
+        self._tls_session.close()
         return resp.status_code
 
     @property
@@ -184,8 +188,7 @@ class BaseKempAppliance(HttpClient, AccessInfoMixin):
             lic_obj = build_object(License, self.access_info, license_info)
             lic_obj.subscriptions = subscriptions
             return lic_obj
-        else:
-            return license_info
+        return license_info
 
     @property
     def license(self):
@@ -349,8 +352,7 @@ class BaseKempAppliance(HttpClient, AccessInfoMixin):
         if is_successful(response):
             self.password = new_password
             return True
-        else:
-            return False
+        return False
 
     def add_local_user(self, user, password=None, radius=False):
         params = {
@@ -639,8 +641,7 @@ class Geo(BaseKempAppliance):
     def __getitem__(self, parameter):
         if parameter.lower() in Geo._GEO_PARAMS:
             return self.get_geo_parameter(parameter)
-        else:
-            return self.get_parameter(parameter)
+        return self.get_parameter(parameter)
 
     def __setitem__(self, parameter, value):
         if parameter.lower() in Geo._GEO_PARAMS:
@@ -732,7 +733,7 @@ class Geo(BaseKempAppliance):
                 v = None
             else:
                 try:
-                    v = int(v)  # pylint: disable=redefined-variable-type
+                    v = int(v)
                 except ValueError:
                     pass
 
@@ -1468,8 +1469,7 @@ class LoadMaster(BaseKempAppliance):
         if with_timestamp:
             # Extract the last-changed timestamp if present
             return virtual_services, int(data.get('timestamp', 0))
-        else:
-            return virtual_services
+        return virtual_services
 
     def clone_virtual_service(self, service, ip=None, port=None, protocol=None,
                               enable=True,
